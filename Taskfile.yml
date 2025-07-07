@@ -1,0 +1,107 @@
+version: '3'
+
+tasks:
+  create-topics:
+    desc: Создание Kafka-топиков 
+    cmds:
+      # Потоки (обычные топики)
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic messages-stream --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic blocked-users-stream --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic filtered-messages-stream --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic pre-filtered-messages-stream --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic filter-words-stream --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2
+        ignore_error: true
+      # Групповые таблицы
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic blocked-users-table --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2 --config cleanup.policy=compact
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic filtered-messages-table --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2 --config cleanup.policy=compact
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic message-receiver-table --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2 --config cleanup.policy=compact
+        ignore_error: true
+    silent: false
+
+
+  messager:*:*:*:
+    desc: |
+      Отправка сообщения от пользователя к пользователю
+      Пример сообщения: task message-sender:client1:client2:Hello!:
+    vars:
+      USER1: "{{index .MATCH 0}}"
+      USER2: "{{index .MATCH 1}}"
+      CONTENT: "{{index .MATCH 2}}"
+    cmds:
+      - go run ./cmd/block/block.go --from_user_id={{.USER1}} --to_user_id={{.USER2}} --content={{.CONTENT}}
+    silent: false
+
+  filter-add:*:*:
+    desc: |
+      Добавление слова в фильтр.
+      Пример: task filter-add:badword:goodword
+    vars:
+      BADWORD: "{{index .MATCH 0}}"
+      GOODWORD: "{{index .MATCH 1}}"
+    cmds:
+      - go run ./cmd/filterwords/main.go --bad_word={{.BADWORD}} --replace_word={{.GOODWORD}}
+    silent: false
+
+  user-block:*:*:*:
+    desc: |
+      (Раз)Блокировка одним пользователем другого.
+      Пример блокировки: task user-block:user1:user2:true
+      Пример разблокировки: task user-block:user1:user2:false
+    vars:
+      USER1: "{{index .MATCH 0}}"
+      USER2: "{{index .MATCH 1}}"
+      BLOCK_STATUS: "{{index .MATCH 2}}"
+    cmds:
+      - echo "Пользователь {{.USER1}} {{if eq .BLOCK_STATUS "true"}}блокирует{{else}}разблокирует{{end}} пользователя {{.USER2}}"
+      - go run ./cmd/block/block.go --user_id={{.USER1}} --blocked_user_id={{.USER2}} --is_block={{.BLOCK_STATUS}}
+    silent: false
+
+
+  remove-topics:
+    desc: Удаление всех Kafka-топиков
+    cmds:
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic messages-stream --bootstrap-server localhost:9092
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic blocked-users-stream --bootstrap-server localhost:9092
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic filtered-messages-stream --bootstrap-server localhost:9092
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic blocked-users-table --bootstrap-server localhost:9092
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic filtered-messages-table --bootstrap-server localhost:9092
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic pre-filtered-messages-stream --bootstrap-server localhost:9092
+        ignore_error: true
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic message-receiver-table --bootstrap-server localhost:9092
+        ignore_error: true
+    silent: false
+
+  describe-topics:
+    desc: Вывод описания всех Kafka-топиков
+    cmds:
+      - docker-compose exec kafka-0 kafka-topics.sh --describe --bootstrap-server localhost:9092
+    silent: false
+
+  start:
+    desc: Запуск docker-compose в фоновом режиме
+    cmds:
+      - docker-compose up -d
+    silent: false
+
+  stop:
+    desc: Остановка docker-compose
+    cmds:
+      - docker-compose down -v
+    silent: false
+
+  help:
+    desc: Помощь по командам
+    cmds:
+      - task --list
+    silent: true
