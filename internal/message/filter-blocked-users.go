@@ -3,6 +3,7 @@ package message
 import (
 	"context"
 	"log"
+	"log/slog"
 
 	"practice3/internal/user"
 
@@ -40,6 +41,7 @@ func RunBlockFilter(ctx context.Context, brokers []string, inputTopic goka.Strea
 				blockedUsers := blockList.(*user.BlockList).BlockedUsers
 				for _, blockedID := range blockedUsers {
 					if blockedID == message.FromUserID {
+						slog.Debug("Заблокировано сообщение. Пользователь в блокировке.", slog.String("from", message.FromUserID), slog.String("to", message.ToUserID))
 						return // Пользователь заблокирован, пропускаем сообщение
 					}
 				}

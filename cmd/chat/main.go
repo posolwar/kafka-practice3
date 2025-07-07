@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 
 	"practice3/internal/message"
 	"practice3/internal/user"
@@ -10,6 +11,8 @@ import (
 var brokers = []string{"localhost:9094", "localhost:9095", "localhost:9096"}
 
 func main() {
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	// Запуск процессора фильтрации блокировок
 	go message.RunBlockFilter(context.Background(), brokers, message.MessageStream, message.PreFilteredMessageStream)
 

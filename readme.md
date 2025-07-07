@@ -21,12 +21,12 @@
   - `block-user-emitter.go`: Отправляет запросы на блокировку/разблокировку в топик `blocked-users-stream`.
   - `block-user-processor.go`: Обрабатывает запросы на блокировку/разблокировку, сохраняет списки заблокированных пользователей в хранилище `blocked-user`. Предоставляет HTTP API для получения списка блокировок (`/block-list/{user_id}`).
 - **Пакет `message`**:
-  - `fitler-word.go`: Обрабатывает сообщения из топика `pre-filtered-messages-stream`, заменяет запрещённые слова и отправляет результат в `filtered-messages-stream`.
+  - `fitler-word.go`: Обрабатывает сообщения из топика `pre-filtered-words-stream`, заменяет запрещённые слова и отправляет результат в `filtered-words-stream`.
   - `message-sender.go`: Отправляет сообщения в топик `messages-stream`.
-  - `message-receiver.go`: Сохраняет отфильтрованные сообщения из `filtered-messages-stream` в персистентное хранилище и предоставляет HTTP API для получения сообщений (`/messages/{user_id}`).
-  - `RunBlockFilter` (в `fitler-word.go`): Фильтрует сообщения из `messages-stream`, пропуская только сообщения от незаблокированных пользователей в `pre-filtered-messages-stream`.
+  - `messages-receiver.go`: Сохраняет отфильтрованные сообщения из `filtered-words-stream` в персистентное хранилище и предоставляет HTTP API для получения сообщений (`/messages/{user_id}`).
+  - `RunBlockFilter` (в `fitler-word.go`): Фильтрует сообщения из `messages-stream`, пропуская только сообщения от незаблокированных пользователей в `pre-filtered-words-stream`.
 - **Пакет `censore`**:
-  - `new-filter-word.go`: Отправляет запросы на добавление запрещённых слов в топик `filtered-messages`.
+  - `new-filter-word.go`: Отправляет запросы на добавление запрещённых слов в топик `filtered-words`.
 - **Командные утилиты**:
   - `block.go`: CLI-инструмент для отправки запросов на блокировку/разблокировку.
   - `send-message.go`: CLI-инструмент для отправки сообщений.
@@ -37,29 +37,29 @@
 #### Логика работы
 1. **Поток сообщений**:
    - Сообщения отправляются в топик `messages-stream` через `send-message.go`.
-   - Процессор `RunBlockFilter` проверяет, не заблокирован ли отправитель (`FromUserID`) получателем (`ToUserID`), используя данные из хранилища `blocked-user`. Если отправитель не заблокирован, сообщение передаётся в `pre-filtered-messages-stream`.
-   - Процессор `RunWordFilter` обрабатывает сообщения из `pre-filtered-messages-stream`, заменяет запрещённые слова и отправляет результат в `filtered-messages-stream`.
-   - Процессор `RunMessageReceiver` сохраняет сообщения из `filtered-messages-stream` в персистентное хранилище и делает их доступными через HTTP API (`/messages/{user_id}`).
+   - Процессор `RunBlockFilter` проверяет, не заблокирован ли отправитель (`FromUserID`) получателем (`ToUserID`), используя данные из хранилища `blocked-userss`. Если отправитель не заблокирован, сообщение передаётся в `pre-filtered-words-stream`.
+   - Процессор `RunWordFilter` обрабатывает сообщения из `pre-filtered-words-stream`, заменяет запрещённые слова и отправляет результат в `filtered-words-stream`.
+   - Процессор `RunMessageReceiver` сохраняет сообщения из `filtered-words-stream` в персистентное хранилище и делает их доступными через HTTP API (`/messages/{user_id}`).
 
 2. **Блокировка пользователей**:
    - Запросы на блокировку/разблокировку отправляются через `block.go` в топик `blocked-users-stream`.
-   - Процессор `RunBlockProcess` обновляет список заблокированных пользователей в хранилище `blocked-user`.
+   - Процессор `RunBlockProcess` обновляет список заблокированных пользователей в хранилище `blocked-userss`.
    - Список блокировок доступен через HTTP API (`/block-list/{user_id}`).
 
 3. **Фильтрация слов**:
-   - Запрещённые слова добавляются через CLI-команду (`task filter-add:badword:goodword`) в топик `filtered-messages`.
-   - Процессор `RunWordFilter` использует хранилище `filtered-messages` для замены запрещённых слов в сообщениях.
+   - Запрещённые слова добавляются через CLI-команду (`task filter-add:badword:goodword`) в топик `filtered-words`.
+   - Процессор `RunWordFilter` использует хранилище `filtered-words` для замены запрещённых слов в сообщениях.
 
 #### Топики Kafka
 - **Потоки**:
   - `messages-stream`: Входящие сообщения.
-  - `pre-filtered-messages-stream`: Сообщения от незаблокированных юзеров.
-  - `filtered-messages-stream`: Сообщения после фильтрации слов.
+  - `pre-filtered-words-stream`: Сообщения от незаблокированных юзеров.
+  - `filtered-words-stream`: Сообщения после фильтрации слов.
   - `blocked-users-stream`: Запросы на блокировку/разблокировку.
   - `filter-words-stream`: Запросы на добавление запрещённых слов.
 - **Таблицы**:
-  - `blocked-user-table`: Хранит списки заблокированных пользователей.
-  - `filtered-messages-table`: Хранит списки запрещённых слов.
+  - `blocked-userss-table`: Хранит списки заблокированных пользователей.
+  - `filtered-words-table`: Хранит списки запрещённых слов.
 
 ## Инструкция по запуску проекта
 
@@ -112,7 +112,7 @@ task remove-topics
 ```bash
 task filter-add:badword:goodword
 ```
-Проверьте в Kafka UI, что сообщение появилось в топике `filtered-messages`.
+Проверьте в Kafka UI, что сообщение появилось в топике `filtered-words`.
 
 #### 2. Блокировка пользователя
 Заблокируйте пользователя `client1` для `client2`:
@@ -148,7 +148,7 @@ task user-block:client2:client1:false
 ```bash
 go run ./cmd/message/message-sender.go -from_user_id=client1 -to_user_id=client2 -content="тестирование badword"
 ```
-- В Kafka UI проверьте, что сообщение появилось в `messages-stream`, затем в `pre-filtered-messages-stream`, и в `filtered-messages-stream` с заменённым словом (`badword` → `****`).
+- В Kafka UI проверьте, что сообщение появилось в `messages-stream`, затем в `pre-filtered-words-stream`, и в `filtered-words-stream` с заменённым словом (`badword` → `****`).
 - Проверьте сообщения для `client2`:
   ```bash
   curl http://localhost:9092/messages/client2

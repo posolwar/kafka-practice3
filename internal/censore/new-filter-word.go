@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	WordFilterGroup   goka.Group  = "filtered-messages"
+	WordFilterGroup   goka.Group  = "filtered-words"
 	FilterWordsStream goka.Stream = "filter-words-stream"
 )
 

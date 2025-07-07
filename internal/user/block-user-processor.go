@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	BlockUserGroup       goka.Group = "blocked-user"
+	BlockUserGroup       goka.Group = "blocked-userss"
 	ConsumerUserBlocking goka.Group = "user-blocking"
 )
 

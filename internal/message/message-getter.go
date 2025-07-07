@@ -11,7 +11,7 @@ import (
 	"github.com/lovoo/goka"
 )
 
-var MessageReceiverGroup goka.Group = "message-receiver"
+var MessageReceiverGroup goka.Group = "messages-receiver"
 
 type UserMessages struct {
 	Messages []*Message `json:"messages"`
