@@ -16,7 +16,7 @@ tasks:
       - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic filter-words-stream --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2
         ignore_error: true
       # Групповые таблицы
-      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic blocked-users-table --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2 --config cleanup.policy=compact
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic blocked-user-table --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2 --config cleanup.policy=compact
         ignore_error: true
       - cmd: docker-compose exec kafka-0 kafka-topics.sh --create --topic filtered-messages-table --bootstrap-server localhost:9092 --partitions 3 --replication-factor 2 --config cleanup.policy=compact
         ignore_error: true
@@ -72,7 +72,7 @@ tasks:
         ignore_error: true
       - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic filtered-messages-stream --bootstrap-server localhost:9092
         ignore_error: true
-      - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic blocked-users-table --bootstrap-server localhost:9092
+      - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic blocked-user-table --bootstrap-server localhost:9092
         ignore_error: true
       - cmd: docker-compose exec kafka-0 kafka-topics.sh --delete --topic filtered-messages-table --bootstrap-server localhost:9092
         ignore_error: true

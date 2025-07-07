@@ -15,6 +15,12 @@ func RunBlockFilter(ctx context.Context, brokers []string, inputTopic goka.Strea
 		log.Fatal("Ошибка создания view для блокировок: ", err)
 	}
 
+	go func() {
+		if err := view.Run(context.Background()); err != nil {
+			log.Fatalf("Ошибка запуска View: %v", err)
+		}
+	}()
+
 	g := goka.DefineGroup(
 		goka.Group("block-filter"),
 		goka.Input(inputTopic, new(MessageCodec), func(ctx goka.Context, msg interface{}) {

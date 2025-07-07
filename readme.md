@@ -19,7 +19,7 @@
 - **Пакет `user`**:
   - `user.go`: Определяет структуру `User` для представления пользователя (`ID`, `Name`).
   - `block-user-emitter.go`: Отправляет запросы на блокировку/разблокировку в топик `blocked-users-stream`.
-  - `block-user-processor.go`: Обрабатывает запросы на блокировку/разблокировку, сохраняет списки заблокированных пользователей в хранилище `blocked-users`. Предоставляет HTTP API для получения списка блокировок (`/block-list/{user_id}`).
+  - `block-user-processor.go`: Обрабатывает запросы на блокировку/разблокировку, сохраняет списки заблокированных пользователей в хранилище `blocked-user`. Предоставляет HTTP API для получения списка блокировок (`/block-list/{user_id}`).
 - **Пакет `message`**:
   - `fitler-word.go`: Обрабатывает сообщения из топика `pre-filtered-messages-stream`, заменяет запрещённые слова и отправляет результат в `filtered-messages-stream`.
   - `message-sender.go`: Отправляет сообщения в топик `messages-stream`.
@@ -37,13 +37,13 @@
 #### Логика работы
 1. **Поток сообщений**:
    - Сообщения отправляются в топик `messages-stream` через `send-message.go`.
-   - Процессор `RunBlockFilter` проверяет, не заблокирован ли отправитель (`FromUserID`) получателем (`ToUserID`), используя данные из хранилища `blocked-users`. Если отправитель не заблокирован, сообщение передаётся в `pre-filtered-messages-stream`.
+   - Процессор `RunBlockFilter` проверяет, не заблокирован ли отправитель (`FromUserID`) получателем (`ToUserID`), используя данные из хранилища `blocked-user`. Если отправитель не заблокирован, сообщение передаётся в `pre-filtered-messages-stream`.
    - Процессор `RunWordFilter` обрабатывает сообщения из `pre-filtered-messages-stream`, заменяет запрещённые слова и отправляет результат в `filtered-messages-stream`.
    - Процессор `RunMessageReceiver` сохраняет сообщения из `filtered-messages-stream` в персистентное хранилище и делает их доступными через HTTP API (`/messages/{user_id}`).
 
 2. **Блокировка пользователей**:
    - Запросы на блокировку/разблокировку отправляются через `block.go` в топик `blocked-users-stream`.
-   - Процессор `RunBlockProcess` обновляет список заблокированных пользователей в хранилище `blocked-users`.
+   - Процессор `RunBlockProcess` обновляет список заблокированных пользователей в хранилище `blocked-user`.
    - Список блокировок доступен через HTTP API (`/block-list/{user_id}`).
 
 3. **Фильтрация слов**:
@@ -58,7 +58,7 @@
   - `blocked-users-stream`: Запросы на блокировку/разблокировку.
   - `filter-words-stream`: Запросы на добавление запрещённых слов.
 - **Таблицы**:
-  - `blocked-users-table`: Хранит списки заблокированных пользователей.
+  - `blocked-user-table`: Хранит списки заблокированных пользователей.
   - `filtered-messages-table`: Хранит списки запрещённых слов.
 
 ## Инструкция по запуску проекта
@@ -85,7 +85,6 @@
    go run ./cmd/chat/main.go
    ```
    Это запустит все процессоры и HTTP API:
-   - `http://localhost:9091/block-list/{user_id}`: список заблокированных пользователей. Замените user_id на идентификатор юзера.
    - `http://localhost:9092/messages/{user_id}`: список сообщений для пользователя. Замените user_id на идентификатор юзера.
 
 ### Остановка проекта
@@ -119,10 +118,6 @@ task filter-add:badword:goodword
 Заблокируйте пользователя `client1` для `client2`:
 ```bash
 task user-block:client2:client1:true
-```
-Проверьте список блокировок:
-```bash
-curl http://localhost:9091/block-list/client2
 ```
 Ожидаемый результат:
 ```json

@@ -12,7 +12,10 @@ import (
 	"github.com/lovoo/goka"
 )
 
-var BlockUserGroup goka.Group = "blocked-users"
+var (
+	BlockUserGroup       goka.Group = "blocked-user"
+	ConsumerUserBlocking goka.Group = "user-blocking"
+)
 
 type BlockUserReq struct {
 	UserID      string `json:"user_id"`

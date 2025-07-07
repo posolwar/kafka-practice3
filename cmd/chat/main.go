@@ -23,7 +23,7 @@ func main() {
 	go user.RunBlockProcess(brokers, user.BlockUserReqGroup)
 
 	// Запуск view для блокировок
-	go user.RunBlockUserView(brokers)
+	// go user.RunBlockUserView(brokers)
 
 	// Запуск view для сообщений
 	message.RunMessageView(brokers)
